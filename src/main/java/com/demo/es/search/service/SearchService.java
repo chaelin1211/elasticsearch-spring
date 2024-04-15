@@ -2,7 +2,6 @@ package com.demo.es.search.service;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
-import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.HighlightField;
 import com.demo.es.search.dto.ProductResponse;
@@ -29,12 +28,7 @@ public class SearchService {
         try {
             searchResponse = elasticsearchClient.search(sb -> sb
                             .index("products")
-                        .query(qb -> qb.bool(bb -> bb
-                                .should(List.of(
-                                    QueryBuilders.match(mq -> mq.field("name").query(searchWord)),
-                                    QueryBuilders.match(mq -> mq.field("desc").query(searchWord)))
-                                )
-                            ))
+                            .query(qb -> qb.multiMatch(mb -> mb.query(searchWord).fields(List.of("name^2", "desc"))))
                             .highlight(hb -> hb.fields(new HashMap<>() {{
                                 put("name", HighlightField.of(hf -> hf.type("plain")));
                                 put("desc", HighlightField.of(hf -> hf.type("plain")));
