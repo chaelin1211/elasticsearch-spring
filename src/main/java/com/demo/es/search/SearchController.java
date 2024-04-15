@@ -1,5 +1,6 @@
 package com.demo.es.search;
 
+import com.demo.es.search.dto.ProductResponse;
 import com.demo.es.search.dto.SearchLogResponse;
 import com.demo.es.search.service.SearchService;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +18,12 @@ import java.util.List;
 public class SearchController {
     private final SearchService searchService;
 
-    @GetMapping
+    @GetMapping()
+    public List<ProductResponse> getProducts(@RequestParam String searchWord) throws IOException {
+        return searchService.getProducts(searchWord);
+    }
+
+    @GetMapping("/completion")
     public List<SearchLogResponse> getSearchLogList(@RequestParam String searchWord) throws IOException {
         return searchService.getSearchLogList(searchWord);
     }
