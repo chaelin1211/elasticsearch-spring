@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: es-engine
+  data:
+    elasticsearch:
+      repositories:
+        enabled: true
+
+elasticsearch:
+  host: ${LOCAL_ES_HOST}
+  port: ${LOCAL_ES_PORT}
+  api-key: ${LOCAL_ES_API_KEY}
