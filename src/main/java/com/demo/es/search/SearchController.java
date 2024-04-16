@@ -20,11 +20,11 @@ public class SearchController {
 
     @GetMapping()
     public List<ProductResponse> getProducts(@RequestParam String searchWord) throws IOException {
-        return searchService.getProducts(searchWord);
+        return searchService.search(searchWord);
     }
 
     @GetMapping("/completion")
     public List<SearchLogResponse> getSearchLogList(@RequestParam String searchWord) throws IOException {
-        return searchService.getSearchLogList(searchWord);
+        return searchService.getRecommList(searchWord);
     }
 }

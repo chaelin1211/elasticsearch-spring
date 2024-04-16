@@ -19,7 +19,7 @@ import java.util.List;
 public class SearchService {
     private final ElasticSearchService elasticSearchService;
 
-    public List<ProductResponse> getProducts(final String SEARCH_WORD) {
+    public List<ProductResponse> search(final String SEARCH_WORD) {
         SearchResponse<ProductResponse> searchResponse;
         final List<String> FIELD_NAMES = List.of("name", "desc");
 
@@ -44,7 +44,7 @@ public class SearchService {
         return productResponses;
     }
 
-    public List<SearchLogResponse> getSearchLogList(final String SEARCH_WORD) {
+    public List<SearchLogResponse> getRecommList(final String SEARCH_WORD) {
         SearchResponse<SearchLogResponse> searchResponse;
         final String FIELD_NAME = "word.ngram";
 
