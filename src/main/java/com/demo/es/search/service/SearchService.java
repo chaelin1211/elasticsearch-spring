@@ -1,9 +1,7 @@
 package com.demo.es.search.service;
 
-import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
-import co.elastic.clients.elasticsearch.core.search.HighlightField;
 import com.demo.es.search.dto.ProductResponse;
 import com.demo.es.search.dto.SearchLogResponse;
 import lombok.RequiredArgsConstructor;
@@ -13,27 +11,20 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class SearchService {
-    private final ElasticsearchClient elasticsearchClient;
+    private final ElasticSearchService elasticSearchService;
 
-    public List<ProductResponse> getProducts(String searchWord) {
+    public List<ProductResponse> getProducts(final String SEARCH_WORD) {
         SearchResponse<ProductResponse> searchResponse;
+        final List<String> FIELD_NAMES = List.of("name", "desc");
 
         try {
-            searchResponse = elasticsearchClient.search(sb -> sb
-                            .index("products")
-                            .query(qb -> qb.multiMatch(mb -> mb.query(searchWord).fields(List.of("name^2", "desc"))))
-                            .highlight(hb -> hb.fields(new HashMap<>() {{
-                                put("name", HighlightField.of(hf -> hf.type("plain")));
-                                put("desc", HighlightField.of(hf -> hf.type("plain")));
-                            }}))
-                    , ProductResponse.class);
+            searchResponse = elasticSearchService.simpleMultiSearch(SEARCH_WORD, "products", FIELD_NAMES, ProductResponse.class);
         } catch (IOException | ElasticsearchException e) {
             log.error(e.getMessage());
             return Collections.emptyList();
@@ -53,17 +44,12 @@ public class SearchService {
         return productResponses;
     }
 
-    public List<SearchLogResponse> getSearchLogList(String searchWord) {
+    public List<SearchLogResponse> getSearchLogList(final String SEARCH_WORD) {
         SearchResponse<SearchLogResponse> searchResponse;
+        final String FIELD_NAME = "word.ngram";
 
         try {
-            searchResponse = elasticsearchClient.search(sb -> sb
-                            .index("search_log")
-                            .query(qb -> qb.match(mb -> mb.field("word").query(searchWord)))
-                            .highlight(hb -> hb.fields(new HashMap<>() {{
-                                put("word", HighlightField.of(hf -> hf.type("plain")));
-                            }}))
-                    , SearchLogResponse.class);
+            searchResponse = elasticSearchService.simpleSingleSearch(SEARCH_WORD, "search_log", FIELD_NAME, SearchLogResponse.class);
         } catch (IOException | ElasticsearchException e) {
             log.error(e.getMessage());
             return Collections.emptyList();
@@ -75,7 +61,7 @@ public class SearchService {
             assert result != null;
             searchLogResponses.add(SearchLogResponse.builder()
                     .word(result.getWord())
-                    .highlight(hit.highlight().get("word"))
+                    .highlight(hit.highlight().get(FIELD_NAME))
                     .build());
         });
 
