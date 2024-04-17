@@ -16,5 +16,5 @@ public class CommonSearchResponse {
 
     private String fixedSearchWord;
 
-    private String recommendWord;
+    private List<String> recommendWords;
 }

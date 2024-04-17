@@ -5,7 +5,6 @@ import co.elastic.clients.elasticsearch.core.SearchResponse;
 import com.demo.es.search.dto.CommonSearchResponse;
 import com.demo.es.search.dto.ProductResponse;
 import com.demo.es.search.dto.SearchLogResponse;
-import io.micrometer.common.util.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -24,15 +23,28 @@ public class SearchService {
     public CommonSearchResponse search(final String SEARCH_WORD) {
         SearchResponse<ProductResponse.Result> searchResponse;
         final List<String> FIELD_NAMES = List.of("name", "desc");
-        SearchResponse<ProductResponse.ProductInfo> searchResponse;
-        String checkedTypo;
+        final String INDEX_NAME = "products";
+        List<String> recommend = null;
+        String fixedSearchWord = "";
 
         try {
-            checkedTypo = elasticSearchService.checkTypo(SEARCH_WORD);
-            if(StringUtils.isBlank(checkedTypo)) {
-                checkedTypo = SEARCH_WORD;
+            searchResponse = elasticSearchService.multiMatch(SEARCH_WORD, INDEX_NAME, FIELD_NAMES, ProductResponse.Result.class);
+
+            // 검색어와 유사한 결과 값 추출 - 추천어
+
+            // 검색 결과가 없으면
+            if (searchResponse.hits().hits().isEmpty()) {
+                List<String> checkedTypoList = elasticSearchService.phraseSuggest("ko_dictionary", "value.spell", SEARCH_WORD, 2.0);
+
+                // 1. 자동 오타 검수
+                if(checkedTypoList != null && checkedTypoList.size() > 0) {
+                    fixedSearchWord = checkedTypoList.getFirst();
+                    searchResponse = elasticSearchService.multiMatch(fixedSearchWord, INDEX_NAME, FIELD_NAMES, ProductResponse.Result.class);
+                } else {
+                // 2. 오타 검수 결과가 없으면 검색 이력에서 유사 값 추천
+                    recommend = elasticSearchService.phraseSuggest("search_log", "word", SEARCH_WORD, 2.0);
+                }
             }
-            searchResponse = elasticSearchService.simpleMultiSearch(checkedTypo, "products", FIELD_NAMES, ProductResponse.ProductInfo.class);
         } catch (IOException | ElasticsearchException e) {
             log.error(e.getMessage());
             return null;
@@ -52,8 +64,8 @@ public class SearchService {
         return ProductResponse.builder()
                 .result(productResponses)
                 .originSearchWord(SEARCH_WORD)
-                .fixedSearchWord(checkedTypo)
-                .recommendWord("")
+                .fixedSearchWord(fixedSearchWord)
+                .recommendWords(recommend)
                 .build();
     }
 
@@ -62,7 +74,7 @@ public class SearchService {
         final String FIELD_NAME = "word.ngram";
 
         try {
-            searchResponse = elasticSearchService.simpleSingleSearch(SEARCH_WORD, "search_log", FIELD_NAME, SearchLogResponse.class);
+            searchResponse = elasticSearchService.match(SEARCH_WORD, "search_log", FIELD_NAME, SearchLogResponse.class);
         } catch (IOException | ElasticsearchException e) {
             log.error(e.getMessage());
             return Collections.emptyList();
