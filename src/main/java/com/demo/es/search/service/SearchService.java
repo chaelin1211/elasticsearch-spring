@@ -24,7 +24,11 @@ public class SearchService {
         final List<String> FIELD_NAMES = List.of("name", "desc");
 
         try {
-            searchResponse = elasticSearchService.simpleMultiSearch(SEARCH_WORD, "products", FIELD_NAMES, ProductResponse.class);
+            checkedTypo = elasticSearchService.checkTypo(SEARCH_WORD);
+            if(StringUtils.isBlank(checkedTypo)) {
+                checkedTypo = SEARCH_WORD;
+            }
+            searchResponse = elasticSearchService.simpleMultiSearch(checkedTypo, "products", FIELD_NAMES, ProductResponse.ProductInfo.class);
         } catch (IOException | ElasticsearchException e) {
             log.error(e.getMessage());
             return Collections.emptyList();
