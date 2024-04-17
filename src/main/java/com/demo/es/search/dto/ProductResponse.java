@@ -12,13 +12,13 @@ import java.util.Map;
 @Getter
 @SuperBuilder
 public class ProductResponse extends CommonSearchResponse {
-    private List<ProductInfo> productInfos;
+    private List<Result> result;
 
     @Getter
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class ProductInfo {
+    public static class Result {
         private String name;
         private String desc;
         private Map<String, List<String>> highlight;

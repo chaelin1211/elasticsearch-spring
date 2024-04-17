@@ -22,6 +22,7 @@ public class SearchService {
     private final ElasticSearchService elasticSearchService;
 
     public CommonSearchResponse search(final String SEARCH_WORD) {
+        SearchResponse<ProductResponse.Result> searchResponse;
         final List<String> FIELD_NAMES = List.of("name", "desc");
         SearchResponse<ProductResponse.ProductInfo> searchResponse;
         String checkedTypo;
@@ -37,11 +38,11 @@ public class SearchService {
             return null;
         }
 
-        List<ProductResponse.ProductInfo> productResponses = new ArrayList<>();
+        List<ProductResponse.Result> productResponses = new ArrayList<>();
         searchResponse.hits().hits().forEach(hit -> {
-            ProductResponse.ProductInfo result = hit.source();
+            ProductResponse.Result result = hit.source();
             assert result != null;
-            productResponses.add(ProductResponse.ProductInfo.builder()
+            productResponses.add(ProductResponse.Result.builder()
                     .name(result.getName())
                     .desc(result.getDesc())
                     .highlight(hit.highlight())
@@ -49,7 +50,7 @@ public class SearchService {
         });
 
         return ProductResponse.builder()
-                .productInfos(productResponses)
+                .result(productResponses)
                 .originSearchWord(SEARCH_WORD)
                 .fixedSearchWord(checkedTypo)
                 .recommendWord("")
