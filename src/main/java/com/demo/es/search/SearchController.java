@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -18,13 +17,13 @@ import java.util.List;
 public class SearchController {
     private final SearchService searchService;
 
-    @GetMapping()
-    public CommonSearchResponse getProducts(@RequestParam String searchWord) throws IOException {
+    @GetMapping
+    public CommonSearchResponse getProducts(@RequestParam String searchWord) {
         return searchService.search(searchWord);
     }
 
     @GetMapping("/completion")
-    public List<SearchLogResponse> getSearchLogList(@RequestParam String searchWord) throws IOException {
+    public List<SearchLogResponse> getSearchLogList(@RequestParam String searchWord) {
         return searchService.getRecommList(searchWord);
     }
 }
