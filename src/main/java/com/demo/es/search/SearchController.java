@@ -1,6 +1,6 @@
 package com.demo.es.search;
 
-import com.demo.es.search.dto.ProductResponse;
+import com.demo.es.search.dto.CommonSearchResponse;
 import com.demo.es.search.dto.SearchLogResponse;
 import com.demo.es.search.service.SearchService;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +19,7 @@ public class SearchController {
     private final SearchService searchService;
 
     @GetMapping()
-    public List<ProductResponse> getProducts(@RequestParam String searchWord) throws IOException {
+    public CommonSearchResponse getProducts(@RequestParam String searchWord) throws IOException {
         return searchService.search(searchWord);
     }
 
