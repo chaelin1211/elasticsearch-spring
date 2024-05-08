@@ -7,6 +7,7 @@ import co.elastic.clients.elasticsearch.core.search.HighlightField;
 import co.elastic.clients.elasticsearch.core.search.PhraseSuggest;
 import co.elastic.clients.elasticsearch.core.search.PhraseSuggestOption;
 import co.elastic.clients.elasticsearch.core.search.Suggestion;
+import com.demo.es.search.Index;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -21,13 +22,18 @@ import java.util.List;
 public class ElasticsearchService {
     private final ElasticsearchClient elasticsearchClient;
 
+    public <T> SearchResponse<T> multiMatch(final String SEARCH_WORD, final Index INDEX, final List<String> FIELD_NAMES, final Class<T> T) throws IOException {
+        return multiMatch(SEARCH_WORD, INDEX.name(), FIELD_NAMES, T);
+    }
+
     public <T> SearchResponse<T> multiMatch(final String SEARCH_WORD, final String INDEX_NAME, final List<String> FIELD_NAMES, final Class<T> T) throws IOException {
         return elasticsearchClient.search(sb -> sb
                         .index(INDEX_NAME)
                         .query(qb -> qb.multiMatch(mb -> mb.query(SEARCH_WORD).fields(FIELD_NAMES)))
                         .highlight(hb -> {
                             FIELD_NAMES.forEach(
-                                    field -> hb.fields(field, new HighlightField.Builder().build())
+                                    field -> hb.fields(field, new HighlightField.Builder()
+                                            .build())
                             );
 
                             hb.preTags("<strong>")
@@ -37,6 +43,10 @@ public class ElasticsearchService {
                             return hb;
                         })
                 , T);
+    }
+
+    public <T> SearchResponse<T> match(final String SEARCH_WORD, final Index INDEX, final String FIELD_NAME, final Class<T> T) throws IOException {
+        return match(SEARCH_WORD, INDEX.name(), FIELD_NAME, T);
     }
 
     public <T> SearchResponse<T> match(final String SEARCH_WORD, final String INDEX_NAME, final String FIELD_NAME, final Class<T> T) throws IOException {
@@ -49,6 +59,10 @@ public class ElasticsearchService {
                                 .postTags("</strong>")
                                 .boundaryChars(""))
                 , T);
+    }
+
+    public List<String> phraseSuggest(Index INDEX, String FIELD_NAME, String SEARCH_WORD, Double maxError) {
+        return phraseSuggest(INDEX.name(), FIELD_NAME, SEARCH_WORD, maxError);
     }
 
     public List<String> phraseSuggest(String INDEX_NAME, String FIELD_NAME, String SEARCH_WORD, Double maxError) {

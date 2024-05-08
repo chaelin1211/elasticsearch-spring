@@ -2,6 +2,7 @@ package com.demo.es.search.service;
 
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
+import com.demo.es.search.Index;
 import com.demo.es.search.dto.CommonSearchResponse;
 import com.demo.es.search.dto.ProductResponse;
 import com.demo.es.search.dto.SearchLogResponse;
@@ -23,7 +24,7 @@ public class SearchService {
     public CommonSearchResponse search(final String SEARCH_WORD) {
         SearchResponse<ProductResponse.Result> searchResponse;
         final List<String> FIELD_NAMES = List.of("name", "desc");
-        final String INDEX_NAME = "products";
+        final Index products = Index.PRODUCTS;
         List<String> recommend = null;
         String fixedSearchWord = "";
 
