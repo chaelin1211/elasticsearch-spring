@@ -13,7 +13,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-public class ElasticSearchConfig {
+public class ElasticsearchConfig {
     @Value("${elasticsearch.host}")
     private String host;
 

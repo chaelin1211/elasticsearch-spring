@@ -18,7 +18,7 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class ElasticSearchService {
+public class ElasticsearchService {
     private final ElasticsearchClient elasticsearchClient;
 
     public <T> SearchResponse<T> multiMatch(final String SEARCH_WORD, final String INDEX_NAME, final List<String> FIELD_NAMES, final Class<T> T) throws IOException {

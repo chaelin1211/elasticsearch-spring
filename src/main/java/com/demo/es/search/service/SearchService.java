@@ -18,7 +18,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class SearchService {
-    private final ElasticSearchService elasticSearchService;
+    private final ElasticsearchService elasticsearchService;
 
     public CommonSearchResponse search(final String SEARCH_WORD) {
         SearchResponse<ProductResponse.Result> searchResponse;
@@ -28,21 +28,21 @@ public class SearchService {
         String fixedSearchWord = "";
 
         try {
-            searchResponse = elasticSearchService.multiMatch(SEARCH_WORD, INDEX_NAME, FIELD_NAMES, ProductResponse.Result.class);
+            searchResponse = elasticsearchService.multiMatch(SEARCH_WORD, products.name(), FIELD_NAMES, ProductResponse.Result.class);
 
             // 검색어와 유사한 결과 값 추출 - 추천어
 
             // 검색 결과가 없으면
             if (searchResponse.hits().hits().isEmpty()) {
-                List<String> checkedTypoList = elasticSearchService.phraseSuggest("ko_dictionary", "value.spell", SEARCH_WORD, 2.0);
+                List<String> checkedTypoList = elasticsearchService.phraseSuggest(Index.KO_DICTIONARY, "value.spell", SEARCH_WORD, 2.0);
 
                 // 1. 자동 오타 검수
                 if(checkedTypoList != null && checkedTypoList.size() > 0) {
                     fixedSearchWord = checkedTypoList.getFirst();
-                    searchResponse = elasticSearchService.multiMatch(fixedSearchWord, INDEX_NAME, FIELD_NAMES, ProductResponse.Result.class);
+                    searchResponse = elasticsearchService.multiMatch(fixedSearchWord, products, FIELD_NAMES, ProductResponse.Result.class);
                 } else {
                 // 2. 오타 검수 결과가 없으면 검색 이력에서 유사 값 추천
-                    recommend = elasticSearchService.phraseSuggest("search_log", "word", SEARCH_WORD, 2.0);
+                    recommend = elasticsearchService.phraseSuggest(Index.SEARCH_LOG, "word", SEARCH_WORD, 2.0);
                 }
             }
         } catch (IOException | ElasticsearchException e) {
@@ -74,7 +74,7 @@ public class SearchService {
         final String FIELD_NAME = "word.ngram";
 
         try {
-            searchResponse = elasticSearchService.match(SEARCH_WORD, "search_log", FIELD_NAME, SearchLogResponse.class);
+            searchResponse = elasticsearchService.match(SEARCH_WORD, Index.SEARCH_LOG, FIELD_NAME, SearchLogResponse.class);
         } catch (IOException | ElasticsearchException e) {
             log.error(e.getMessage());
             return Collections.emptyList();
