@@ -10,3 +10,7 @@ elasticsearch:
   host: ${LOCAL_ES_HOST}
   port: ${LOCAL_ES_PORT}
   api-key: ${LOCAL_ES_API_KEY}
+
+logging:
+  level:
+    org.elasticsearch.client: TRACE
