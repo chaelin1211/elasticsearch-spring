@@ -5,18 +5,16 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
+import java.util.Map;
 
 @Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CommonSearchResponse<T> {
-    private String originSearchWord;
+public class ProductResultResponse {
+    private String name;
 
-    private String fixedSearchWord;
+    private String desc;
 
-    private List<String> recommendWords;
-
-    private List<T> result;
+    private Map<String, String> highlight;
 }

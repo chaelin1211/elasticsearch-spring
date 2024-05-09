@@ -3,18 +3,13 @@ package com.demo.es.search.service;
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import com.demo.es.search.Index;
-import com.demo.es.search.dto.CommonFieldRequest;
-import com.demo.es.search.dto.CommonSearchResponse;
-import com.demo.es.search.dto.ProductResponse;
-import com.demo.es.search.dto.SearchLogResponse;
+import com.demo.es.search.dto.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -22,8 +17,8 @@ import java.util.List;
 public class SearchService {
     private final ElasticsearchService elasticsearchService;
 
-    public CommonSearchResponse search(final String searchWord) {
-        SearchResponse<ProductResponse.Result> searchResponse;
+    public CommonSearchResponse<ProductResultResponse> search(final String searchWord) {
+        SearchResponse<ProductResultResponse> searchResponse;
         final Index PRODUCTS = Index.PRODUCTS;
         final List<CommonFieldRequest> FIELD_OPTIONS = List.of(
                 CommonFieldRequest.builder().name("name").highlightOption(
@@ -43,7 +38,7 @@ public class SearchService {
         String fixedSearchWord = "";
 
         try {
-            searchResponse = elasticsearchService.multiMatch(searchWord, PRODUCTS, FIELD_OPTIONS, ProductResponse.Result.class);
+            searchResponse = elasticsearchService.multiMatch(searchWord, PRODUCTS, FIELD_OPTIONS, ProductResultResponse.class);
 
             // 검색어와 유사한 결과 값 추출 - 추천어
 
@@ -54,7 +49,7 @@ public class SearchService {
                 // 1. 자동 오타 검수
                 if (checkedTypoList != null && checkedTypoList.size() > 0) {
                     fixedSearchWord = checkedTypoList.getFirst();
-                    searchResponse = elasticsearchService.multiMatch(fixedSearchWord, PRODUCTS, FIELD_OPTIONS, ProductResponse.Result.class);
+                    searchResponse = elasticsearchService.multiMatch(fixedSearchWord, PRODUCTS, FIELD_OPTIONS, ProductResultResponse.class);
                 } else {
                     // 2. 오타 검수 결과가 없으면 검색 이력에서 유사 값 추천
                     recommend = elasticsearchService.phraseSuggest(Index.SEARCH_LOG, "word", searchWord, 2.0);
@@ -65,19 +60,30 @@ public class SearchService {
             return null;
         }
 
-        List<ProductResponse.Result> productResponses = new ArrayList<>();
+        List<ProductResultResponse> productResultResponses = new ArrayList<>();
         searchResponse.hits().hits().forEach(hit -> {
-            ProductResponse.Result result = hit.source();
-            assert result != null;
-            productResponses.add(ProductResponse.Result.builder()
+            ProductResultResponse result = hit.source();
+            if(result == null) return;
+
+            Map<String, List<String>> highlight = hit.highlight();
+            Map<String, String> highlightResult = new HashMap<>();
+
+            for (Map.Entry<String, List<String>> entry : highlight.entrySet()) {
+                List<String> values = entry.getValue();
+                if (!values.isEmpty()) {
+                    highlightResult.put(entry.getKey(), values.get(0));
+                }
+            }
+
+            productResultResponses.add(ProductResultResponse.builder()
                     .name(result.getName())
                     .desc(result.getDesc())
-                    .highlight(hit.highlight())
+                    .highlight(highlightResult)
                     .build());
         });
 
-        return ProductResponse.builder()
-                .result(productResponses)
+        return CommonSearchResponse.<ProductResultResponse>builder()
+                .result(productResultResponses)
                 .originSearchWord(searchWord)
                 .fixedSearchWord(fixedSearchWord)
                 .recommendWords(recommend)
@@ -100,10 +106,14 @@ public class SearchService {
         List<SearchLogResponse> searchLogResponses = new ArrayList<>();
         searchResponse.hits().hits().forEach(hit -> {
             SearchLogResponse result = hit.source();
-            assert result != null;
+            if(result == null) return;
+
+            List<String> highlights = hit.highlight().get(FIELD_OPTION.getName());
+            String highlight = highlights == null || highlights.isEmpty() ? null : highlights.get(0);
+
             searchLogResponses.add(SearchLogResponse.builder()
                     .word(result.getWord())
-                    .highlight(hit.highlight().get(FIELD_OPTION.getName()))
+                    .highlight(highlight)
                     .build());
         });
 
