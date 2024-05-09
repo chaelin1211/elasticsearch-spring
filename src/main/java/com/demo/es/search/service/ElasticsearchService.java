@@ -8,6 +8,7 @@ import co.elastic.clients.elasticsearch.core.search.PhraseSuggest;
 import co.elastic.clients.elasticsearch.core.search.PhraseSuggestOption;
 import co.elastic.clients.elasticsearch.core.search.Suggestion;
 import com.demo.es.search.Index;
+import com.demo.es.search.dto.CommonFieldRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -22,17 +23,20 @@ import java.util.List;
 public class ElasticsearchService {
     private final ElasticsearchClient elasticsearchClient;
 
-    public <T> SearchResponse<T> multiMatch(final String SEARCH_WORD, final Index INDEX, final List<String> FIELD_NAMES, final Class<T> T) throws IOException {
-        return multiMatch(SEARCH_WORD, INDEX.name(), FIELD_NAMES, T);
+    public <T> SearchResponse<T> multiMatch(final String searchWord, final Index index, final List<CommonFieldRequest> fieldNames, final Class<T> T) throws IOException {
+        return multiMatch(searchWord, index.getName(), fieldNames, T);
     }
 
-    public <T> SearchResponse<T> multiMatch(final String SEARCH_WORD, final String INDEX_NAME, final List<String> FIELD_NAMES, final Class<T> T) throws IOException {
+    public <T> SearchResponse<T> multiMatch(final String searchWord, final String indexName, final List<CommonFieldRequest> fieldRequest, final Class<T> T) throws IOException {
         return elasticsearchClient.search(sb -> sb
-                        .index(INDEX_NAME)
-                        .query(qb -> qb.multiMatch(mb -> mb.query(SEARCH_WORD).fields(FIELD_NAMES)))
+                        .index(indexName)
+                        .query(qb -> qb.multiMatch(mb -> mb.query(searchWord).fields(fieldRequest.stream().map(CommonFieldRequest::getName).toList())))
                         .highlight(hb -> {
-                            FIELD_NAMES.forEach(
-                                    field -> hb.fields(field, new HighlightField.Builder()
+                            fieldRequest.forEach(
+                                    field -> hb.fields(field.getName(), new HighlightField.Builder()
+                                            .fragmentSize(field.getHighlightOption().getFragmentSize())
+                                            .numberOfFragments(field.getHighlightOption().getNumberOfFragments())
+                                            .noMatchSize(field.getHighlightOption().getNoMatchSize())
                                             .build())
                             );
 
@@ -45,37 +49,45 @@ public class ElasticsearchService {
                 , T);
     }
 
-    public <T> SearchResponse<T> match(final String SEARCH_WORD, final Index INDEX, final String FIELD_NAME, final Class<T> T) throws IOException {
-        return match(SEARCH_WORD, INDEX.name(), FIELD_NAME, T);
+    public <T> SearchResponse<T> match(final String searchWord, final Index index, final CommonFieldRequest fieldRequest, final Class<T> T) throws IOException {
+        return match(searchWord, index.getName(), fieldRequest, T);
     }
 
-    public <T> SearchResponse<T> match(final String SEARCH_WORD, final String INDEX_NAME, final String FIELD_NAME, final Class<T> T) throws IOException {
+    public <T> SearchResponse<T> match(final String searchWord, final String indexName, final CommonFieldRequest fieldRequest, final Class<T> T) throws IOException {
+        String fieldName = fieldRequest.getName();
+        CommonFieldRequest.HighlightOption highlightOption = fieldRequest.getHighlightOption();
+        HighlightField highlightField = highlightOption != null
+                ? new HighlightField.Builder().noMatchSize(highlightOption.getNoMatchSize())
+                    .fragmentSize(highlightOption.getFragmentSize())
+                    .numberOfFragments(highlightOption.getNumberOfFragments())
+                    .build()
+                : new HighlightField.Builder().build();
         return elasticsearchClient.search(sb -> sb
-                        .index(INDEX_NAME)
-                        .query(qb -> qb.match(mb -> mb.field(FIELD_NAME).query(SEARCH_WORD)))
+                        .index(indexName)
+                        .query(qb -> qb.match(mb -> mb.field(fieldName).query(searchWord)))
                         .highlight(hb -> hb
-                                .fields(FIELD_NAME, new HighlightField.Builder().build())
+                                .fields(fieldName, highlightField)
                                 .preTags("<strong>")
                                 .postTags("</strong>")
                                 .boundaryChars(""))
                 , T);
     }
 
-    public List<String> phraseSuggest(Index INDEX, String FIELD_NAME, String SEARCH_WORD, Double maxError) {
-        return phraseSuggest(INDEX.name(), FIELD_NAME, SEARCH_WORD, maxError);
+    public List<String> phraseSuggest(Index index, String fieldName, String searchWord, Double maxError) {
+        return phraseSuggest(index.getName(), fieldName, searchWord, maxError);
     }
 
-    public List<String> phraseSuggest(String INDEX_NAME, String FIELD_NAME, String SEARCH_WORD, Double maxError) {
+    public List<String> phraseSuggest(final String indexName, final String fieldName, final String searchWord, final Double maxError) {
         final String SUGGESTER_KEY = "phrase_suggest";
         SearchResponse<PhraseSuggest> searchResponse;
         try {
             searchResponse = elasticsearchClient.search(sb -> sb
-                    .index(INDEX_NAME)
+                    .index(indexName)
                     .suggest(s -> s
                             .suggesters(SUGGESTER_KEY, fsb -> fsb
-                                    .text(SEARCH_WORD)
+                                    .text(searchWord)
                                     .phrase(ps -> ps
-                                            .field(FIELD_NAME)
+                                            .field(fieldName)
                                             .maxErrors(maxError))
                             )), PhraseSuggest.class);
         } catch (IOException | ElasticsearchException e) {
@@ -86,9 +98,9 @@ public class ElasticsearchService {
         return getSuggestWords(searchResponse, SUGGESTER_KEY);
     }
 
-    public <T> List<String> getSuggestWords(SearchResponse<T> searchResponse, final String SUGGESTER_KEY) {
-        List<Suggestion<T>> suggestList = searchResponse.suggest().get(SUGGESTER_KEY);
-        if(suggestList != null && !suggestList.isEmpty()) {
+    private <T> List<String> getSuggestWords(SearchResponse<T> searchResponse, final String suggesterKey) {
+        List<Suggestion<T>> suggestList = searchResponse.suggest().get(suggesterKey);
+        if (suggestList != null && !suggestList.isEmpty()) {
             Suggestion<T> phraseSuggestSuggestion = suggestList.getFirst();
             List<PhraseSuggestOption> options = phraseSuggestSuggestion != null ? phraseSuggestSuggestion.phrase().options() : null;
 
