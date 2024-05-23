@@ -4,7 +4,7 @@ import lombok.Getter;
 
 @Getter
 public enum Index {
-    SEARCH_LOG("search_log"),
+    SEARCH_LOGS("search_logs"),
     KO_DICTIONARY("ko_dictionary"),
     PRODUCTS("products");
     private final String name;

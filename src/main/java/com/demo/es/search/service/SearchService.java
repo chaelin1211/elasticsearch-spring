@@ -52,7 +52,7 @@ public class SearchService {
                     searchResponse = elasticsearchService.multiMatch(fixedSearchWord, PRODUCTS, FIELD_OPTIONS, ProductResultResponse.class);
                 } else {
                     // 2. 오타 검수 결과가 없으면 검색 이력에서 유사 값 추천
-                    recommend = elasticsearchService.phraseSuggest(Index.SEARCH_LOG, "word", searchWord, 2.0);
+                    recommend = elasticsearchService.phraseSuggest(Index.SEARCH_LOGS, "word", searchWord, 2.0);
                 }
             }
         } catch (IOException | ElasticsearchException e) {
@@ -97,7 +97,7 @@ public class SearchService {
                 .build();
 
         try {
-            searchResponse = elasticsearchService.match(searchWord, Index.SEARCH_LOG, FIELD_OPTION, SearchLogResponse.class);
+            searchResponse = elasticsearchService.match(searchWord, Index.SEARCH_LOGS, FIELD_OPTION, SearchLogResponse.class);
         } catch (IOException | ElasticsearchException e) {
             log.error(e.getMessage());
             return Collections.emptyList();
