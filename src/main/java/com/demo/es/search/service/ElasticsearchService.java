@@ -8,7 +8,7 @@ import co.elastic.clients.elasticsearch.core.search.PhraseSuggest;
 import co.elastic.clients.elasticsearch.core.search.PhraseSuggestOption;
 import co.elastic.clients.elasticsearch.core.search.Suggestion;
 import com.demo.es.search.Index;
-import com.demo.es.search.dto.CommonFieldRequest;
+import com.demo.es.search.dto.FieldRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -23,14 +23,14 @@ import java.util.List;
 public class ElasticsearchService {
     private final ElasticsearchClient elasticsearchClient;
 
-    public <T> SearchResponse<T> multiMatch(final String searchWord, final Index index, final List<CommonFieldRequest> fieldNames, final Class<T> T) throws IOException {
+    public <T> SearchResponse<T> multiMatch(final String searchWord, final Index index, final List<FieldRequest> fieldNames, final Class<T> T) throws IOException {
         return multiMatch(searchWord, index.getName(), fieldNames, T);
     }
 
-    public <T> SearchResponse<T> multiMatch(final String searchWord, final String indexName, final List<CommonFieldRequest> fieldRequest, final Class<T> T) throws IOException {
+    public <T> SearchResponse<T> multiMatch(final String searchWord, final String indexName, final List<FieldRequest> fieldRequest, final Class<T> T) throws IOException {
         return elasticsearchClient.search(sb -> sb
                         .index(indexName)
-                        .query(qb -> qb.multiMatch(mb -> mb.query(searchWord).fields(fieldRequest.stream().map(CommonFieldRequest::getName).toList())))
+                        .query(qb -> qb.multiMatch(mb -> mb.query(searchWord).fields(fieldRequest.stream().map(FieldRequest::getName).toList())))
                         .highlight(hb -> {
                             fieldRequest.forEach(
                                     field -> hb.fields(field.getName(), new HighlightField.Builder()
@@ -49,13 +49,13 @@ public class ElasticsearchService {
                 , T);
     }
 
-    public <T> SearchResponse<T> match(final String searchWord, final Index index, final CommonFieldRequest fieldRequest, final Class<T> T) throws IOException {
+    public <T> SearchResponse<T> match(final String searchWord, final Index index, final FieldRequest fieldRequest, final Class<T> T) throws IOException {
         return match(searchWord, index.getName(), fieldRequest, T);
     }
 
-    public <T> SearchResponse<T> match(final String searchWord, final String indexName, final CommonFieldRequest fieldRequest, final Class<T> T) throws IOException {
+    public <T> SearchResponse<T> match(final String searchWord, final String indexName, final FieldRequest fieldRequest, final Class<T> T) throws IOException {
         String fieldName = fieldRequest.getName();
-        CommonFieldRequest.HighlightOption highlightOption = fieldRequest.getHighlightOption();
+        FieldRequest.HighlightOption highlightOption = fieldRequest.getHighlightOption();
         HighlightField highlightField = highlightOption != null
                 ? new HighlightField.Builder().noMatchSize(highlightOption.getNoMatchSize())
                     .fragmentSize(highlightOption.getFragmentSize())

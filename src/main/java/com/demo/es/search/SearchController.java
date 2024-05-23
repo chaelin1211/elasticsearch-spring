@@ -1,7 +1,7 @@
 package com.demo.es.search;
 
-import com.demo.es.search.dto.CommonSearchResponse;
 import com.demo.es.search.dto.SearchLogResponse;
+import com.demo.es.search.dto.SearchResultResopnse;
 import com.demo.es.search.service.SearchService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,7 +18,7 @@ public class SearchController {
     private final SearchService searchService;
 
     @GetMapping
-    public CommonSearchResponse getProducts(@RequestParam String searchWord) {
+    public SearchResultResopnse getProducts(@RequestParam String searchWord) {
         return searchService.search(searchWord);
     }
 

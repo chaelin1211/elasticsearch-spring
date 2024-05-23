@@ -5,7 +5,7 @@ import lombok.Getter;
 
 @Getter
 @Builder
-public class CommonFieldRequest {
+public class FieldRequest {
     private String name;
 
     private HighlightOption highlightOption;

@@ -3,7 +3,10 @@ package com.demo.es.search.service;
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import com.demo.es.search.Index;
-import com.demo.es.search.dto.*;
+import com.demo.es.search.dto.FieldRequest;
+import com.demo.es.search.dto.ProductResultResponse;
+import com.demo.es.search.dto.SearchLogResponse;
+import com.demo.es.search.dto.SearchResultResopnse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -17,17 +20,18 @@ import java.util.*;
 public class SearchService {
     private final ElasticsearchService elasticsearchService;
 
-    public CommonSearchResponse<ProductResultResponse> search(final String searchWord) {
+
+    public SearchResultResopnse<ProductResultResponse> search(final String searchWord) {
         SearchResponse<ProductResultResponse> searchResponse;
         final Index PRODUCTS = Index.PRODUCTS;
-        final List<CommonFieldRequest> FIELD_OPTIONS = List.of(
-                CommonFieldRequest.builder().name("name").highlightOption(
-                        CommonFieldRequest.HighlightOption.builder()
+        final List<FieldRequest> FIELD_OPTIONS = List.of(
+                FieldRequest.builder().name("name").highlightOption(
+                        FieldRequest.HighlightOption.builder()
                                 .noMatchSize(99)
                                 .build()
                 ).build()
-                , CommonFieldRequest.builder().name("desc").highlightOption(
-                        CommonFieldRequest.HighlightOption.builder()
+                , FieldRequest.builder().name("desc").highlightOption(
+                        FieldRequest.HighlightOption.builder()
                                 .fragmentSize(50)
                                 .noMatchSize(50)
                                 .numberOfFragments(1)
@@ -82,7 +86,7 @@ public class SearchService {
                     .build());
         });
 
-        return CommonSearchResponse.<ProductResultResponse>builder()
+        return SearchResultResopnse.<ProductResultResponse>builder()
                 .result(productResultResponses)
                 .originSearchWord(searchWord)
                 .fixedSearchWord(fixedSearchWord)
@@ -92,7 +96,7 @@ public class SearchService {
 
     public List<SearchLogResponse> getRecommList(final String searchWord) {
         SearchResponse<SearchLogResponse> searchResponse;
-        final CommonFieldRequest FIELD_OPTION = CommonFieldRequest.builder()
+        final FieldRequest FIELD_OPTION = FieldRequest.builder()
                 .name("word.ngram")
                 .build();
 

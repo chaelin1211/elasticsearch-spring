@@ -11,7 +11,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CommonSearchResponse<T> {
+public class SearchResultResopnse<T> {
     private String originSearchWord;
 
     private String fixedSearchWord;
