@@ -1,4 +1,4 @@
-package com.demo.es.search;
+package com.demo.es.search.dto;
 
 import lombok.Getter;
 
